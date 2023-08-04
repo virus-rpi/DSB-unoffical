@@ -1,6 +1,6 @@
 import React from 'react';
 import {SafeAreaView, StyleSheet, View, Text, StatusBar} from 'react-native';
-import Carousel, {Card, ItemType} from './components/carousel';
+import Carousel from './components/carousel';
 import {getData} from './API';
 
 function App(): React.JSX.Element {
