@@ -1,4 +1,4 @@
-import React, {Dispatch, SetStateAction, useEffect, useMemo, useState} from 'react';
+import React, {Dispatch, SetStateAction, useEffect, useMemo, useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -62,7 +62,7 @@ function getTodayOrTomorrow(date: Date): string {
 }
 
 const Carousel = ({class_, setClass, class_list, data_raw}: CarouselProps) => {
-  const [update, setUpdate] = useState(false);
+  const flatListRef = useRef<FlatList<Card>>(null);
 
   const data = useMemo<Card[]>(() => {
     const filteredData = data_raw.filter(card => card.class === class_);
@@ -103,8 +103,8 @@ const Carousel = ({class_, setClass, class_list, data_raw}: CarouselProps) => {
   }, [class_, data_raw]);
 
   useEffect(() => {
-    setUpdate(!update);
-  }, [data]);
+    flatListRef.current?.scrollToIndex({animated: false, index: 1});
+  }, [class_]);
 
   const animatedButtonY = useState(new Animated.Value(0))[0];
 
@@ -274,14 +274,20 @@ const Carousel = ({class_, setClass, class_list, data_raw}: CarouselProps) => {
 
   return (
     <View style={styles.container}>
-      <FlatList
+        <FlatList
         horizontal
         data={data}
         renderItem={renderCard}
         keyExtractor={keyExtractor}
         pagingEnabled
         snapToInterval={Dimensions.get('window').width}
-        initialScrollIndex={1}
+        ref={flatListRef}
+        onScrollToIndexFailed={info => {
+          const wait = new Promise(resolve => setTimeout(resolve, 500));
+          wait.then(() => {
+          flatListRef.current?.scrollToIndex({ index: info.index, animated: false });
+          });
+        }}
       />
     </View>
   );
