@@ -1,4 +1,4 @@
-import React, {Dispatch, SetStateAction, useEffect, useState} from 'react';
+import React, {Dispatch, SetStateAction, useEffect, useMemo, useState} from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import ListViewSelect from './list-view-select';
+import {SettingsComponent} from "./settings";
 
 export enum ItemType {
   omitted = 'omitted',
@@ -61,11 +62,13 @@ function getTodayOrTomorrow(date: Date): string {
 }
 
 const Carousel = ({class_, setClass, class_list, data_raw}: CarouselProps) => {
-  const [data, setData] = useState<Card[]>([]);
-  useEffect(() => {
-    setData(data_raw.filter(card => card.class === class_));
-    if (data_raw.filter(card => card.class === class_).length === 0) {
-      setData([
+  const [update, setUpdate] = useState(false);
+
+  const data = useMemo<Card[]>(() => {
+    const filteredData = data_raw.filter(card => card.class === class_);
+
+    if (filteredData.length === 0) {
+      return [
         {
           id: 'settings',
           date: new Date(),
@@ -80,22 +83,28 @@ const Carousel = ({class_, setClass, class_list, data_raw}: CarouselProps) => {
           missing_teachers: [],
           class: class_,
         },
-      ]);
-      console.log('no data (raw)', data_raw);
-      console.log('no data (filtered)', data);
-    } else if (data.filter(card => card.id === 'settings').length === 0) {
-      setData([
-        {
-          id: 'settings',
-          date: new Date(),
-          items: [],
-          class: class_,
-          missing_teachers: [],
-        },
-        ...data,
-      ]);
+      ];
     }
+
+    const settingCard = filteredData.find(card => card.id === 'settings');
+
+    if (!settingCard) {
+       return [{
+        id: 'settings',
+        date: new Date(),
+        items: [],
+        class: class_,
+        missing_teachers: [],
+      }, ...filteredData];
+
+    }
+
+    return filteredData;
   }, [class_, data_raw]);
+
+  useEffect(() => {
+    setUpdate(!update);
+  }, [data]);
 
   const animatedButtonY = useState(new Animated.Value(0))[0];
 
@@ -135,7 +144,7 @@ const Carousel = ({class_, setClass, class_list, data_raw}: CarouselProps) => {
       return (
         <View style={styles.card_wrapper}>
           <View style={styles.card}>
-            <Text>Settings</Text>
+            <SettingsComponent />
           </View>
         </View>
       );
