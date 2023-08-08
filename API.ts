@@ -1,10 +1,9 @@
 import {Card, ItemType} from "./components/carousel";
 import {settings} from "./components/settings";
 import {useEffect, useState} from "react";
-const DSB = require('dsbapi');
+import {DsbApi} from "./components/dsb-api";
 
 export function useApi() {
-    const [dsb, setDsb] = useState<typeof DSB>(new DSB("", ""));
     const [data, setData] = useState<Card[]>([
         {
             id: '1', date: new Date(), items:
@@ -42,16 +41,21 @@ export function useApi() {
 
     }, []);
 
+    function getTableData() {
+        settings().loadData("school").then(async (schoolSettings) => {
+            console.log(schoolSettings);
+            if (schoolSettings != null) {
+                const dsb = new DsbApi(JSON.parse(schoolSettings).username, JSON.parse(schoolSettings).password);
+                const result_raw = await dsb.fetch_entries();
+                console.log(result_raw);
+            }
+        });
+    }
+
     useEffect(() => {
+        getTableData();
         setInterval(() => {
-            settings().loadData("school").then((schoolSettings) => {
-                if (schoolSettings != null) {
-                    setDsb(new DSB(JSON.parse(schoolSettings).username, JSON.parse(schoolSettings).password));
-                    dsb.fetch().then((data: any) => {
-                        console.log(data);
-                    });
-                }
-            })
+            getTableData();
         }, 600000);
 
     }, []);
