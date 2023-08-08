@@ -1,7 +1,7 @@
 import {Card, ItemType} from "./components/carousel";
 import {settings} from "./components/settings";
 import {useEffect, useState} from "react";
-import Dsbmobile from "dsbmobile";
+import Dsbmobile, {TimeTable} from "dsbmobile";
 
 export function useApi() {
     const [data, setData] = useState<Card[]>([
@@ -46,22 +46,50 @@ export function useApi() {
 
     }, []);
 
-    function getTableData() {
-        settings().loadData("school").then(async (schoolSettings) => {
-            if (schoolSettings != null) {
-                const dsb = new Dsbmobile(JSON.parse(schoolSettings).username, JSON.parse(schoolSettings).password);
-                console.log(dsb);
-                dsb.getTimetable().then((timetable) => {
-                    console.log("Timetable", timetable.findByClassName("11p"));
+    async function getTableData() {
+        const schoolSettings = await settings().loadData("school");
+
+        if (schoolSettings != null) {
+            const dsb = new Dsbmobile(JSON.parse(schoolSettings).username, JSON.parse(schoolSettings).password);
+            return await dsb.getTimetable();
+        } else {
+            return {} as TimeTable;
+        }
+    }
+
+    function processTableData(tableData: TimeTable) {
+        let entries: Card[] = [];
+
+        for (const class_ of possible_classes) {
+            const entryForClass = tableData.findByClassName(class_);
+            if (entryForClass !== undefined) {
+                entries.push({
+                    class: class_,
+                    missing_teachers: [],
+                    id: (entries.length + 1) + "",
+                    date: new Date(),
+                    items: []
+                });
+            } else { //TODO: add formatting so that the correct data is pushed
+                entries.push({
+                    class: class_,
+                    missing_teachers: [],
+                    id: (entries.length + 1) + "",
+                    date: new Date(),
+                    items: []
                 });
             }
-        });
+        }
+
+        return entries;
     }
 
     useEffect(() => {
-        getTableData();
+        getTableData().then((tableData) => {
+            setData(processTableData(tableData));
+        });
         setInterval(() => {
-            getTableData();
+
         }, 600000);
 
     }, []);
