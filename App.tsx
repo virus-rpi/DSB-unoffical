@@ -2,10 +2,11 @@ import { StatusBar } from 'expo-status-bar';
 import {SafeAreaView, StyleSheet, Text, View} from 'react-native';
 import Carousel from "./components/carousel";
 import React from "react";
-import {getData} from "./API";
+import {useApi} from "./API";
 
-function App(): JSX.Element {
-  const {data, school_name, possible_classes} = getData();
+function App(): React.JSX.Element {
+  const API = useApi();
+  const {data, school_name, possible_classes} = API.getData();
   const [class_, setClass] = React.useState(possible_classes[0]);
 
   return (

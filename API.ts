@@ -1,29 +1,64 @@
 import {Card, ItemType} from "./components/carousel";
+import {settings} from "./components/settings";
+import {useEffect, useState} from "react";
+const DSB = require('dsbapi');
 
-const data: Card[] = [
-  { id: '1', date: new Date(), items:
-      [
-          { subject: "Biologie", type: ItemType.omitted, room: "", time: [1, 2], araf: "mebis", teacher: "" },
-          { subject: "Deutsch", type: ItemType.stand_in, room: "1.14", time: [5, 6], araf: "", teacher: "Herr Müller" },
-          { subject: "Englisch", type: ItemType.room_change, room: "1.14", time: [7, 8], araf: "", teacher: "" },
-      ],
-    missing_teachers: ["Frau Müller", "Herr Schmidt"],
-    class: "11p",
-  },
-  { id: '2', date: new Date(), items: [], missing_teachers: [], class: "11p" },
-  { id: '3', date: new Date(), items:
-      [
-          { subject: "Sport", type: ItemType.omitted, room: "", time: [1, 1], araf: "", teacher: "" },
-      ],
-    missing_teachers: ["Frau Müller", "Herr Schmidt"],
-    class: "11a",
-  },
-];
+export function useApi() {
+    const [dsb, setDsb] = useState<typeof DSB>(new DSB("", ""));
+    const [data, setData] = useState<Card[]>([
+        {
+            id: '1', date: new Date(), items:
+                [
+                    {subject: "Biologie", type: ItemType.omitted, room: "", time: [1, 2], araf: "mebis", teacher: ""},
+                    {subject: "Deutsch", type: ItemType.stand_in, room: "1.14", time: [5, 6], araf: "", teacher: "Herr Müller"},
+                    {subject: "Englisch", type: ItemType.room_change, room: "1.14", time: [7, 8], araf: "", teacher: ""},
+                ],
+            missing_teachers: ["Frau Müller", "Herr Schmidt"],
+            class: "11p",
+        },
+        {id: '2', date: new Date(), items: [], missing_teachers: [], class: "11p"},
+        {
+            id: '3', date: new Date(), items:
+                [
+                    {subject: "Sport", type: ItemType.omitted, room: "", time: [1, 1], araf: "", teacher: ""},
+                ],
+            missing_teachers: ["Frau Müller", "Herr Schmidt"],
+            class: "11a",
+        },
+    ]);
+    const [school_name, setSchoolName] = useState<string>("DSB");
 
-const school_name = "SAG";
+    const [possible_classes, setPossibleClasses] = useState<string[]>(["5a", "5b", "5c", "6a", "6b", "6c", "7a", "7b", "7c", "8a", "8p", "8k", "9a", "9p", "9k", "10a", "10p", "10k", "11a", "11p", "11k", "12a", "12p", "12k"]);
 
-const possible_classes = ["5a", "5b", "5c", "6a", "6b", "6c", "7a", "7b", "7c", "8a", "8p", "8k", "9a", "9p", "9k", "10a", "10p", "10k", "11a", "11p", "11k", "12a", "12p", "12k"];
+    useEffect(() => {
+        setInterval(() => {
+            settings().loadData("school").then((schoolSetting) => {
+                    if (schoolSetting !== undefined && schoolSetting !== null) {
+                        setSchoolName(JSON.parse(schoolSetting).name);
+                    }
+                }
+            );
+        }, 1000);
 
-export function getData() {
-  return {data: data, school_name: school_name, possible_classes: possible_classes};
+    }, []);
+
+    useEffect(() => {
+        setInterval(() => {
+            settings().loadData("school").then((schoolSettings) => {
+                if (schoolSettings != null) {
+                    setDsb(new DSB(JSON.parse(schoolSettings).username, JSON.parse(schoolSettings).password));
+                    dsb.fetch().then((data: any) => {
+                        console.log(data);
+                    });
+                }
+            })
+        }, 600000);
+
+    }, []);
+
+    function getData() {
+        return {data: data, school_name: school_name, possible_classes: possible_classes};
+    }
+
+    return {getData};
 }
