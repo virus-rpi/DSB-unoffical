@@ -1,6 +1,6 @@
-import {View, Text, Switch, StyleSheet, TouchableOpacity, Modal, TextInput} from "react-native";
+import {View, Text, Switch, StyleSheet, TouchableOpacity, Modal, TextInput, FlatList} from "react-native";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export function SettingsComponent() {
     const [darkMode, setDarkMode] = useState(false);
@@ -9,6 +9,10 @@ export function SettingsComponent() {
     const [schoolName, setSchoolName] = useState("");
     const [schoolUsername, setSchoolUsername] = useState("");
     const [schoolPassword, setSchoolPassword] = useState("");
+    const [showClassPicker, setShowClassPicker] = useState(false);
+    const [classes, setClasses] = useState([""]);
+    const [newClass, setNewClass] = useState("");
+    const newClassInput = React.createRef<TextInput>();
 
     useEffect(() => {
         if (settings().loadData("darkMode") === null) {
@@ -27,6 +31,15 @@ export function SettingsComponent() {
             if (value === "true") {
                 setNotifications(true);
             }
+        }).catch((e) => console.error(e));
+
+        if (settings().loadData("classes") === null) {
+            settings().saveData("classes", "[]").catch((e) => console.error(e));
+        }
+        settings().loadData("classes").then((value) => {
+          if (typeof value === "string") {
+            setClasses(JSON.parse(value));
+          }
         }).catch((e) => console.error(e));
     }, []);
 
@@ -51,17 +64,37 @@ export function SettingsComponent() {
         settings().saveData("school", JSON.stringify(school)).catch((e) => console.error(e));
     }
 
+    const saveClasses = async () => {
+        settings().saveData("classes", JSON.stringify(classes)).catch((e) => console.error(e));
+    }
+
     const darkModeComponent = () => (
         <View style={styles.settingRow}>
-                    <Text style={styles.settingText}>Dark Mode</Text>
-                    <Switch
-                        trackColor={{ false: "#d0d0d0", true: "#1c1c1c" }}
-                        thumbColor={"#f4f3f4"}
-                        ios_backgroundColor="#3e3e3e"
-                        onValueChange={toggleDarkMode}
-                        value={darkMode}
-                    />
+          <Text style={styles.settingText}>Dark Mode</Text>
+          <Switch
+              trackColor={{ false: "#d0d0d0", true: "#1c1c1c" }}
+              thumbColor={"#f4f3f4"}
+              ios_backgroundColor="#3e3e3e"
+              onValueChange={toggleDarkMode}
+              value={darkMode}
+          />
         </View>
+    );
+
+    const classComponent = ({item}: {item: string}) => (
+         <View style={styles.settingRow}>
+              <Text  style={styles.settingText}>{item}</Text>
+              <View style={{width: 10}} />
+              <TouchableOpacity
+                  onPress={() => {
+                      const newClasses = classes.filter((value) => value !== item);
+                      setClasses(newClasses);
+                  }}
+                  style={styles.deleteButton}
+              >
+                  <Text style={styles.buttonText}>x</Text>
+              </TouchableOpacity>
+          </View>
     );
 
     return (
@@ -84,62 +117,131 @@ export function SettingsComponent() {
         >
             <Text style={styles.settingText}>Change School</Text>
         </TouchableOpacity>
-      </View>
-        <Modal
-            animationType="slide"
-            transparent={true}
-            visible={showSchoolPicker}
-            onRequestClose={() => {
-                setShowSchoolPicker(false);
-            }}
+        <View style={{height: 10}} />
+        <TouchableOpacity
+            onPress={() => {setShowClassPicker(true)}}
+            style={styles.settingRow}
         >
-            <View style={styles.centeredView}>
-                <View style={styles.schoolPickerView}>
-                    <View>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Name"
-                            onChangeText={(text) => {setSchoolName(text)}}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Username"
-                            onChangeText={(text) => {setSchoolUsername(text)}}
-                        />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Password"
-                            onChangeText={(text) => {setSchoolPassword(text)}}
-                        />
-                    </View>
-                    <View style={{height: 10}} />
-                    <View style={styles.settingRow}>
-                        <TouchableOpacity
-                            onPress={() => {setShowSchoolPicker(false)}}
-                            style={[
-                                styles.button,
-                                {backgroundColor: "#ff9c9c"}
-                            ]}
-                        >
-                            <Text style={styles.buttonText}>Cancel</Text>
-                        </TouchableOpacity>
-                        <View style={{width: 10}}></View>
-                        <TouchableOpacity
-                            onPress={() => {
-                                setShowSchoolPicker(false);
-                                saveSchool()
-                            }}
-                            style={[
-                                styles.button,
-                                {backgroundColor: "#6ad1ff"}
-                            ]}
-                        >
-                            <Text style={styles.buttonText}>Ok</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
+          <Text style={styles.settingText}>Your Classes</Text>
+        </TouchableOpacity>
+      </View>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showSchoolPicker}
+        onRequestClose={() => {
+          setShowSchoolPicker(false);
+        }}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modal}>
+            <View>
+              <TextInput
+                style={styles.input}
+                placeholder="Name"
+                onChangeText={(text) => {setSchoolName(text)}}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Username"
+                onChangeText={(text) => {setSchoolUsername(text)}}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                onChangeText={(text) => {setSchoolPassword(text)}}
+              />
             </View>
-        </Modal>
+            <View style={{height: 10}} />
+            <View style={styles.settingRow}>
+              <TouchableOpacity
+                onPress={() => {setShowSchoolPicker(false)}}
+                style={[
+                  styles.button,
+                  {backgroundColor: "#ff9c9c"}
+                ]}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <View style={{width: 10}}></View>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowSchoolPicker(false);
+                  saveSchool()
+                }}
+                style={[
+                  styles.button,
+                  {backgroundColor: "#6ad1ff"}
+                ]}
+              >
+                <Text style={styles.buttonText}>Ok</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showClassPicker}
+        onRequestClose={() => {
+          setShowClassPicker(false);
+        }}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modal}>
+            <View style={styles.settingRow}>
+              <TextInput
+                ref={newClassInput}
+                style={styles.inputInlined}
+                placeholder="Class Name"
+                onChangeText={(text) => {setNewClass(text)}}
+              />
+              <TouchableOpacity
+                onPress={() => {if (newClass !== "" && !(newClass in classes)) setClasses([...classes, newClass]); newClassInput.current?.clear(); setNewClass("")}}
+              >
+                <Text style={{fontSize: 30}}>+</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={classes}
+              renderItem={classComponent}
+              keyExtractor={(item, index) => index.toString()}
+            />
+            <View style={styles.settingRow}>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowClassPicker(false);
+                  settings().loadData("classes").then((value) => {
+                    if (typeof value === "string") {
+                      setClasses(JSON.parse(value));
+                    }
+                    }).catch((e) => console.error(e));
+                }}
+                style={[
+                  styles.button,
+                  {backgroundColor: "#ff9c9c"}
+                ]}
+              >
+                <Text style={styles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <View style={{width: 10}}></View>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowClassPicker(false);
+                  saveClasses();
+                }}
+                style={[
+                  styles.button,
+                  {backgroundColor: "#6ad1ff"}
+                ]}
+              >
+                <Text style={styles.buttonText}>Ok</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -190,7 +292,7 @@ const styles = StyleSheet.create({
   settingText: {
     fontSize: 20,
   },
-  schoolPickerView: {
+  modal: {
     margin: 20,
     backgroundColor: 'white',
     borderRadius: 20,
@@ -233,4 +335,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     minWidth: '80%'
   },
+  inputInlined: {
+    height: 40,
+    margin: 12,
+    padding: 10,
+    backgroundColor: "#e7e7e7",
+    textAlign: 'center',
+    borderRadius: 10,
+    minWidth: '60%'
+  },
+  deleteButton: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: 30,
+    color: "#ff5757"
+  }
 });

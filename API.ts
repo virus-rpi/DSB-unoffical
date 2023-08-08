@@ -1,7 +1,7 @@
 import {Card, ItemType} from "./components/carousel";
 import {settings} from "./components/settings";
 import {useEffect, useState} from "react";
-import {DsbApi} from "./components/dsb-api";
+import Dsbmobile from "dsbmobile";
 
 export function useApi() {
     const [data, setData] = useState<Card[]>([
@@ -37,17 +37,23 @@ export function useApi() {
                     }
                 }
             );
+            settings().loadData("classes").then((classesSetting) => {
+                if (classesSetting !== undefined && classesSetting !== null) {
+                    setPossibleClasses(JSON.parse(classesSetting));
+                }
+            });
         }, 1000);
 
     }, []);
 
     function getTableData() {
         settings().loadData("school").then(async (schoolSettings) => {
-            console.log(schoolSettings);
             if (schoolSettings != null) {
-                const dsb = new DsbApi(JSON.parse(schoolSettings).username, JSON.parse(schoolSettings).password);
-                const result_raw = await dsb.fetch_entries();
-                console.log(result_raw);
+                const dsb = new Dsbmobile(JSON.parse(schoolSettings).username, JSON.parse(schoolSettings).password);
+                console.log(dsb);
+                dsb.getTimetable().then((timetable) => {
+                    console.log("Timetable", timetable.findByClassName("11p"));
+                });
             }
         });
     }
