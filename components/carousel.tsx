@@ -61,6 +61,12 @@ function getTodayOrTomorrow(date: Date): string {
   }
 }
 
+const separatorView = () => () => (
+  <View style={styles.itemSeparator}>
+    <View style={styles.itemSeparatorLine} />
+  </View>
+)
+
 const Carousel = ({class_, setClass, class_list, data_raw}: CarouselProps) => {
   const flatListRef = useRef<FlatList<Card>>(null);
 
@@ -169,11 +175,7 @@ const Carousel = ({class_, setClass, class_list, data_raw}: CarouselProps) => {
                 data={item.items}
                 renderItem={renderItem}
                 keyExtractor={item => item.subject}
-                ItemSeparatorComponent={() => (
-                  <View style={styles.itemSeparator}>
-                    <View style={styles.itemSeparatorLine} />
-                  </View>
-                )}
+                ItemSeparatorComponent={separatorView()}
               />
             )}
             {item.items.length === 0 && (

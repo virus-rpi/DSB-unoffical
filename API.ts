@@ -50,10 +50,14 @@ export function useApi() {
         const schoolSettings = await settings().loadData("school");
 
         if (schoolSettings != null) {
+            console.log("School settings found");
             const dsb = new Dsbmobile(JSON.parse(schoolSettings).username, JSON.parse(schoolSettings).password);
+            // TODO: check if other methods of dsb return the correct data
+            console.log(await dsb.getTimetable());
             return await dsb.getTimetable();
         } else {
-            return {} as TimeTable;
+            console.log("No school settings found");
+            return undefined;
         }
     }
 
@@ -86,7 +90,11 @@ export function useApi() {
 
     useEffect(() => {
         getTableData().then((tableData) => {
+            if (tableData === undefined) {
+                return;
+            }
             setData(processTableData(tableData));
+            // bconsole.log(tableData.toJSON());
         });
         setInterval(() => {
 

@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import {SafeAreaView, StyleSheet, Text, View} from 'react-native';
+import {RefreshControl, SafeAreaView, StyleSheet, Text, View} from 'react-native';
 import Carousel from "./components/carousel";
 import React from "react";
 import {useApi} from "./API";
@@ -8,11 +8,22 @@ function App(): React.JSX.Element {
   const API = useApi();
   const {data, school_name, possible_classes} = API.getData();
   const [class_, setClass] = React.useState(possible_classes[0]);
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={styles.container}
+    >
       <StatusBar backgroundColor="#ff3c3c" />
-      <View style={styles.header}>
+      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      <View style={styles.header} >
         <Text style={styles.headerText}>{school_name}</Text>
       </View>
       <Carousel
