@@ -1,7 +1,7 @@
 import {Card, ItemType} from "./components/carousel";
 import {settings} from "./components/settings";
 import {useEffect, useState} from "react";
-import Dsbmobile, {TimeTable} from "dsbmobile";
+import { DSBApi } from "./DSBApiLib";
 
 export function useApi() {
     const [data, setData] = useState<Card[]>([
@@ -50,20 +50,22 @@ export function useApi() {
         const schoolSettings = await settings().loadData("school");
 
         if (schoolSettings != null) {
+            const username = JSON.parse(schoolSettings).username;
+            const password = JSON.parse(schoolSettings).password;
             console.log("School settings found");
-            const dsb = new Dsbmobile(JSON.parse(schoolSettings).username, JSON.parse(schoolSettings).password);
-            // TODO: check if other methods of dsb return the correct data
-            console.log(await dsb.getTimetable());
-            return await dsb.getTimetable();
+            const dsb = new DSBApi(username, password);
+            const data = await dsb.fetch_entries();
+            console.log(data);
+            return data;
         } else {
             console.log("No school settings found");
             return undefined;
         }
     }
 
-    function processTableData(tableData: TimeTable) {
+    function processTableData(tableData: any) {
         let entries: Card[] = [];
-
+        /*
         for (const class_ of possible_classes) {
             const entryForClass = tableData.findByClassName(class_);
             if (entryForClass !== undefined) {
@@ -84,6 +86,7 @@ export function useApi() {
                 });
             }
         }
+        */
 
         return entries;
     }
